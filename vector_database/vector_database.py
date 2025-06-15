@@ -43,7 +43,7 @@ class VectorDatabase:
         collection_name: str,
         storage: str = ":memory:",
         retrieval_mode: RetrievalMode = RetrievalMode.DENSE,
-        vector_size: int = 768,
+        vector_size: int = 1024,
         google_key_pattern: str = "GOOGLE_API_KEY",
         num_keys: int = 1,
     ) -> None:

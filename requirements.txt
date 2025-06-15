@@ -8,4 +8,6 @@ pandas~=2.2.3
 docx~=0.2.4
 langchain-core~=0.3.65
 torch
+langchain-huggingface
 sentence-transformers
+langchain-qdrant

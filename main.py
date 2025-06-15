@@ -15,7 +15,6 @@ for string in strings:
     print(string.page_content)
     i +=1
 
-
 # llm = ChatGoogleGenerativeAI(model="gemini-2.0-flash", google_api_key=key)
 # message = llm.invoke("Bao giờ trẻ em biết đi")
 
