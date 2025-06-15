@@ -1,13 +1,15 @@
 from typing import List, Optional, Sequence
 from uuid import uuid4
-
+from pathlib import Path
 from langchain_core.documents import Document
+import sentence_transformers
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from langchain_qdrant import (
     FastEmbedSparse,
     QdrantVectorStore,
     RetrievalMode,
 )
+from langchain_huggingface.embeddings import HuggingFaceEmbeddings
 from qdrant_client import QdrantClient, models
 from qdrant_client.http.models import (
     Distance,
@@ -47,9 +49,17 @@ class VectorDatabase:
     ) -> None:
         # 1. Embeddings -------------------------------------------------------
         self._google_key = GoogleKey(pattern=google_key_pattern, num_keys=num_keys)
-        self._dense_embeddings = GoogleGenerativeAIEmbeddings(
-            model="models/text-embedding-004",
-            google_api_key=self._google_key.get_key(),
+        # self._dense_embeddings = GoogleGenerativeAIEmbeddings(
+        #     model="models/text-embedding-004",
+        #     google_api_key=self._google_key.get_key(),
+        # )
+
+        cache_path = str(Path(__file__).resolve().parents[1] / "cache")
+        self._dense_embeddings = HuggingFaceEmbeddings(
+            cache_folder=cache_path,
+            model_name="AITeamVN/Vietnamese_Embedding",
+            model_kwargs={'device': 'cpu'},
+            encode_kwargs={'normalize_embeddings': False}
         )
 
         # Sparse embedding (chỉ cần nếu SPARSE/HYBRID)
