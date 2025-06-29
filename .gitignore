@@ -1,0 +1,8 @@
+.env
+.idea
+utils/__pycache__/
+vector_database/__pycache__/
+__pycache__
+cache/
+./tmp.py
+./tmp2.py
