@@ -11,3 +11,5 @@ torch
 langchain-huggingface
 sentence-transformers
 langchain-qdrant
+langgraph~=0.4.8
+ipython~=9.1.0

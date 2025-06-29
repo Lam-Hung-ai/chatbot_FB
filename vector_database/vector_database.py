@@ -2,8 +2,6 @@ from typing import List, Optional, Sequence
 from uuid import uuid4
 from pathlib import Path
 from langchain_core.documents import Document
-import sentence_transformers
-from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from langchain_qdrant import (
     FastEmbedSparse,
     QdrantVectorStore,

@@ -1,31 +1,20 @@
+import os
 from utils.read_env import GoogleKey
-from langchain_qdrant import QdrantVectorStore, RetrievalMode
-from langchain_google_genai import GoogleGenerativeAIEmbeddings
-from qdrant_client import QdrantClient
-from qdrant_client.http.models import Distance, VectorParams
+from vector_database.vector_database import VectorDatabase
+from langchain_google_genai import ChatGoogleGenerativeAI
 
-client = QdrantClient(path="/home/lamhung/PycharmProjects/chatbot_FB/vector_storage")
+vector_db = VectorDatabase(storage="./vector_storage", num_keys=2, collection_name="chat_FB")
+vector_db.create_or_attach_collection()
 google_key = GoogleKey(pattern="GOOGLE_API_KEY", num_keys=2)
-print(google_key.get_key())
-client.create_collection(
-    collection_name="demo_collection",
-    vectors_config=VectorParams(size=768, distance=Distance.COSINE),
-)
-embeddings = GoogleGenerativeAIEmbeddings(
-            model="models/text-embedding-004",
-            google_api_key=google_key.get_key()
-)
-vector_store = QdrantVectorStore(
-    client=client,
-    collection_name="demo_collection",
-    embedding=embeddings,
-)
-# Lưu hàng loạt văn bản
-vector_store.add_texts([
-    "Tài liệu về AI",
-    "Hướng dẫn sử dụng LangChain"
-], metadatas=[{"source":"doc1"}, {"source":"doc2"}])
+query = "Khi nào trẻ có thể bắt đầu lẫy, bò, và đi?"
+strings = vector_db.similarity_search(query)
+print(len(strings))
+i = 1
+for string in strings:
+    print(f"String {i}:", end=" ")
+    print(string.page_content)
+    i +=1
 
-# Tìm kiếm 5 văn bản tương tự với truy vấn
-results = vector_store.similarity_search("Hướng dẫn AI cơ bản", k=5)
-print(results)
+# llm = ChatGoogleGenerativeAI(model="gemini-2.0-flash", google_api_key=key)
+# message = llm.invoke("Bao giờ trẻ em biết đi")
+
