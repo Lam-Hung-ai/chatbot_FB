@@ -1,20 +1,21 @@
-import os
-from utils.read_env import GoogleKey
-from vector_database.vector_database import VectorDatabase
-from langchain_google_genai import ChatGoogleGenerativeAI
+from httpx import AsyncClient
 
-vector_db = VectorDatabase(storage="./vector_storage", num_keys=2, collection_name="chat_FB")
-vector_db.create_or_attach_collection()
-google_key = GoogleKey(pattern="GOOGLE_API_KEY", num_keys=2)
-query = "Khi nào trẻ có thể bắt đầu lẫy, bò, và đi?"
-strings = vector_db.similarity_search(query)
-print(len(strings))
-i = 1
-for string in strings:
-    print(f"String {i}:", end=" ")
-    print(string.page_content)
-    i +=1
+async def send_message(base_url: str):
+    payload = {
+        "recipient": {"id": "9113847768635863"},
+        "messaging_type": "RESPONSE",
+        "message": {"text": "xin chao"},
+    }
+    params = {'access_token': 'EAAQR54g2cnMBOwiTKeuarWHzOZBnbKCmGo9ytsyY596ZCEo9pUzY8AUHYmTGLzBTuvw5GbwtR6m5BpKAUX7JocSe9fV8pU7uFmS0AfxQnD3uEbOPffNUXZCSRsnQznUbs2FQSB6A7Hh7RUK5ljOxB0UZAyZCVEY91K1zv5ktx954vBuyZCZC8T4ouAn678QqpejWqoo'}
 
-# llm = ChatGoogleGenerativeAI(model="gemini-2.0-flash", google_api_key=key)
-# message = llm.invoke("Bao giờ trẻ em biết đi")
+    async with AsyncClient() as client:
+        resp = await client.post(f"{base_url}", params=params, json=payload)
 
+    return resp
+
+if __name__ == "__main__":
+    import asyncio
+
+    base_url = "https://graph.facebook.com/v23.0/462935746912595/messages"  # Thay bằng URL thực tế của bạn
+    response = asyncio.run(send_message(base_url))
+    print(response.text)  # In ra kết quả trả về từ API
