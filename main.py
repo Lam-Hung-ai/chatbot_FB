@@ -16,7 +16,7 @@ class State(TypedDict):
     decision: str
     query: str
     info: list
-
+    
 graph_builder = StateGraph(State)
 
 def llm_router(state: State):
