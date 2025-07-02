@@ -12,3 +12,4 @@ langchain-qdrant
 langgraph~=0.4.8
 ipython~=9.1.0
 fastapi[standard]
+ipywidgets

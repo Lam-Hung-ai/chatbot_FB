@@ -159,7 +159,7 @@ async def get_conservation(conversation_id: str, sender_id: str, limit: int= 40)
                     history.add_ai_message(message['message'])
 
             logger.info(f"Lấy thông tin cuộc trò chuyện thành công cho {sender_id} với ID cuộc trò chuyện {conversation_id}")
-            return history.messages
+            return history.messages.copy()
         except HTTPStatusError as http_err:
             err_text = http_err.response.text
             logger.error(
