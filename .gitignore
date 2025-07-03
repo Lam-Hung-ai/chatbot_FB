@@ -4,8 +4,22 @@ utils/__pycache__/
 vector_database/__pycache__/
 __pycache__
 cache/
-tmp.py
-tmp2.py
 tmp.ipynb
 chatbot_FB
 SSL/
+
+# VS Code
+.vscode/
+
+# Virtual Environment
+.venv
+venv
+env/
+*.env
+
+# Jupyter Notebook Checkpoints
+.ipynb_checkpoints/
+
+# Log files
+*.log
+logs/

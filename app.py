@@ -1,6 +1,7 @@
 import os
 import sys
 import logging
+from dotenv import load_dotenv
 
 from fastapi import FastAPI, Request, HTTPException
 from fastapi.responses import PlainTextResponse
@@ -10,8 +11,10 @@ from pydantic import BaseModel
 from httpx import AsyncClient, HTTPStatusError
 
 from langchain_core.chat_history import InMemoryChatMessageHistory
+from langchain_text_splitters import RecursiveCharacterTextSplitter
 
-from dotenv import load_dotenv
+from chatbot import chatbot
+from vector_database.vector_database import VectorDatabase
 
 # Cấu hình logging: thời gian, cấp độ, tên module và nội dung
 logging.basicConfig(
@@ -27,12 +30,16 @@ logger = logging.getLogger(__name__)
 load_dotenv()
 PAGE_ACCESS_TOKEN = os.getenv("PAGE_ACCESS_TOKEN")
 VERIFY_TOKEN = os.getenv("VERIFY_TOKEN")
+PAGE_ID = os.getenv("PAGE_ID")
 if not PAGE_ACCESS_TOKEN or not VERIFY_TOKEN:
     logger.critical("Thiếu PAGE_ACCESS_TOKEN hoặc VERIFY_TOKEN trong .env, ứng dụng sẽ dừng.")
     sys.exit("Thiếu PAGE_ACCESS_TOKEN hoặc VERIFY_TOKEN trong .env")
 
 # URL endpoint của Facebook Send API
 FB_SEND_API = "https://graph.facebook.com/v23.0"
+
+db = VectorDatabase(collection_name="chatbot_FB", storage="./vector_storage", cache_path="./cache")
+db.create_or_attach_collection()
 
 # Khởi tạo ứng dụng FastAPI
 app = FastAPI()
@@ -106,7 +113,7 @@ async def get_info_conservation(sender_id: str) -> str | None:
     Lấy ID cuộc trò chuyện từ Facebook Graph API.
     Trả về ID cuộc trò chuyện nếu thành công, ngược lại log lỗi và trả về None.
     """
-    url = f"{FB_SEND_API}/462935746912595/conversations"
+    url = f"{FB_SEND_API}/{PAGE_ID}/conversations"
     params = {
         "access_token": PAGE_ACCESS_TOKEN,
         "fields": "id,senders"
@@ -152,14 +159,16 @@ async def get_conservation(conversation_id: str, sender_id: str, limit: int= 40)
             messages = data["messages"]['data']
             messages.reverse()
             history = InMemoryChatMessageHistory()
+            sender_name = ''
             for message in messages:
                 if message['from']['id'] == sender_id:
                     history.add_user_message(message['message'])
+                    sender_name = message['from']['name']
                 else:
                     history.add_ai_message(message['message'])
 
             logger.info(f"Lấy thông tin cuộc trò chuyện thành công cho {sender_id} với ID cuộc trò chuyện {conversation_id}")
-            return history.messages.copy()
+            return history.messages.copy(), sender_name
         except HTTPStatusError as http_err:
             err_text = http_err.response.text
             logger.error(
@@ -176,7 +185,7 @@ async def send_message(recipient_id: str, text: str) -> dict | None:
     """
 
     params = {"access_token": PAGE_ACCESS_TOKEN}
-    url = f"{FB_SEND_API}/462935746912595/messages"
+    url = f"{FB_SEND_API}/{PAGE_ID}/messages"
     payload = {
         "recipient": {"id": recipient_id},
         "messaging_type": "RESPONSE",
@@ -184,12 +193,24 @@ async def send_message(recipient_id: str, text: str) -> dict | None:
     }
 
     async with AsyncClient(timeout=10.0) as client:
-        try:
-            resp = await client.post(url, json=payload, params=params)
-            resp.raise_for_status()
-            data = resp.json()
-            logger.info(f"Gửi tin nhắn thành công tin nhắn tới {recipient_id}")
-            return data
+        try: 
+            data = None
+            if len(text) > 1800:
+                text_splitter = RecursiveCharacterTextSplitter(chunk_size=1800, chunk_overlap=100)
+                messages = text_splitter.split_text(text)
+                for i, chunk in enumerate(messages):
+                    payload["message"]["text"] = chunk
+                    resp = await client.post(url, json=payload, params=params)
+                    resp.raise_for_status()
+                    data = resp.json()
+                    logger.info(f"Gửi tin nhắn thành công tin nhắn tới {recipient_id} - phần {i + 1}/{len(messages)}")
+                return data
+            else:
+                resp = await client.post(url, json=payload, params=params)
+                resp.raise_for_status()
+                data = resp.json()
+                logger.info(f"Gửi tin nhắn thành công tới {recipient_id}")
+                return data
         except HTTPStatusError as http_err:
             err_text = http_err.response.text
             logger.error(
@@ -227,12 +248,18 @@ async def handle_messages(payload: WebhookPayload):
                 if conversation_id is None:
                     logger.error(f"Không tìm thấy ID cuộc trò chuyện cho {sender_id}")
                     continue
-                messages = await get_conservation(conversation_id, sender_id)
-                if messages is None:
+                conversation_history, sender_name = await get_conservation(conversation_id, sender_id)
+                if conversation_history is None:
                     logger.error(f"Không thể lấy thông tin cuộc trò chuyện cho {sender_id} với ID {conversation_id}")
                     continue
-                print(messages)
+                response = await chatbot.ainvoke(
+                    {
+                        "messages": conversation_history,
+                        "parent_name": sender_name,
+                        "vector_db": db
+                    }
+                )
                 # Gửi tin nhắn phản hồi
-                await send_message(sender_id, f"Bạn đã gửi: '{text}'")
+                await send_message(sender_id, response["messages"][-1].content)
 
     return {"status": "ok"}
