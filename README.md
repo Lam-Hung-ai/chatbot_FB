@@ -1,8 +1,9 @@
 # Chatbot Bảo Mẫu trên Facebook Messenger
 
 ## Giới thiệu
+  
+**Chatbot Bảo Mẫu** là hệ thống tư vấn chuyên sâu về chăm sóc trẻ em, hoạt động trực tiếp trên nền tảng Facebook Messenger. Chatbot được thiết kế như một chuyên gia bảo mẫu, có khả năng lắng nghe, phân tích bối cảnh hội thoại, truy xuất tài liệu chuyên ngành và đưa ra lời khuyên thấu cảm, chính xác cho phụ huynh. 
 
-**Chatbot Bảo Mẫu** là hệ thống tư vấn chuyên sâu về chăm sóc trẻ em, hoạt động trực tiếp trên nền tảng Facebook Messenger. Chatbot được thiết kế như một chuyên gia bảo mẫu, có khả năng lắng nghe, phân tích bối cảnh hội thoại, truy xuất tài liệu chuyên ngành và đưa ra lời khuyên thấu cảm, chính xác cho phụ huynh.  
 ![kiến trúc](./images/chatbot_architecture.png)
 ---
 
